@@ -16,8 +16,290 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section  data-markdown>
+					<script type="text/template">
+						## Git Mistakes that you can make at every step of the way
+						and how to recover from them
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Staying within the box
+						![XKCD Git](https://imgs.xkcd.com/comics/git.png)
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Nearly everything is recoverable if you know the script...
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Useful commands for recovery
+						- git checkout
+						- git clean
+						- git cherrypick
+						- git commit
+						- git rebase
+						- git reflog
+						- git reset
+						- git revert
+						- git rm
+						- git filter-branch and the BFG Repo-Cleaner open source tool
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Git states you can make mistakes
+						- No Changes
+						- Untracked / Modified
+						- Staged
+						- Committed (Last commit)
+						- Local branch history
+						- Local branch history affected by other branches
+						- Controlled branch pushed to remote
+						- Child branch of shared feature branch
+						- Merged into master (trunk) branch
+						- Forked repo (bonus)
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Git Mistakes and recovery
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: No Changes 
+						### Example mistake: Deleted a branch by mistake
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Deleted a branch by mistake
+						#### Recovery: 
+
+						```shell []
+						$ git checkout master
+						Switched to branch 'master'
+						
+						$ git branch -D deletedBranch
+						Deleted branch deletedBranch (was e1a3514).
+						
+						$ git reflog --no-abbrev
+						c299af1158ee618c0a2069e1cb56072e359baff3 (HEAD -> master) HEAD@{0}: checkout: moving from deletedBranch to master
+						e1a3514da475de30de285da544e8e53c9d7064c7 HEAD@{1}: commit: New readme
+
+						$ git checkout -b recoveredDeletedBranch e1a3514da475de30de285da544e8e53c9d7064c7
+						Switched to a new branch 'recoveredBranch'
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Untracked / Modified
+						### Example mistake: Made a bunch of bad changes
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Made a bunch of bad changes
+						#### Recovery: 
+
+						```shell []
+						# reset to staged
+						$ git checkout -- C:\Dev\MockRepo\README.md
+
+						# reset to last commit
+						$ git checkout HEAD -- C:\Dev\MockRepo\README.md
+
+						# git clean to delete un tracked files
+						$ git clean -f -q -- C:\Dev\Talks\FsAsteroids\FileToDrop.md
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Staged
+						### Example mistake: Some changes to remove and many changes without committing
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Some changes to remove and many changes without committing
+						#### Recovery: 
+
+						```shell []
+						# Unstage changes
+						$ git reset HEAD README.md
+
+						# Revert to last commit
+						$ git checkout HEAD -- README.md
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Some changes to remove and many changes without committing
+						Git gui (And git rebase -i for cleanup after committing)
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Committed (most recent commit)
+						### Example mistake: Amended last commit incorrectly
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Amended last commit incorrectly
+						#### git commit --amend: 
+
+						```shell []
+						$ git add README.md
+
+						$ git commit -m "Update readme with requirements"
+
+						$ git add README.md
+						
+						$ git commit --amend -m "Update readme with requirements and controls"	
+						
+						$ git reset --soft @{1}
+
+						# If you want to update that commit correctly with the same message
+						$ git commit -C @{1}
+						
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Local branch history
+						### Example mistake: Made commits to wrong branch
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Made commits to wrong branch
+						#### Recovery: 
+
+						```shell []
+						$ git checkout correctBranch
+
+						# Pick all commits from A to B including A and B (A must be the older commit)
+						$ git cherry-pick A^..B
+
+						$ git checkout master
+
+						$ git reset --hard origin/master
+						```
+                    </script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						### Made commits to wrong branch (Alternative when correctBranch has no commits)
+						#### Recovery: 
+
+						```shell []
+						$ git checkout correctBranch
+
+						$ git reset --hard master
+
+						$ git checkout master
+
+						$ git reset --hard origin/master
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Local branch history affected by other branches
+						### Example mistake: Bad local git merge
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Bad local git merge (right after merge)
+						#### Recovery: 
+
+						```shell []
+						# Be aware that any modified and uncommitted/unstashed files will be reset to their unmodified state.
+						$ git reset --hard ORIG_HEAD
+
+						# Resets the index and updates the files in the working tree that are different between {commit} and HEAD, but keeps those which are different between the index and working tree (i.e. which have changes which have not been added). 
+						$ git reset --merge ORIG_HEAD
+
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						### Challenge for later: Bad local git merge + keep further commits after it
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Controlled branch pushed to remote
+						### Example mistake:  Committed and pushed senstive data or large data 
+						https://help.github.com/en/github/authenticating-to-github/removing-sensitive-data-from-a-repository
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Child branch of shared feature branch
+						### Example mistake / problem: Feature branch has local merges or multiple rebases in it so rebasing the final branch is a nightmare
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						###  Feature branch has local merges in it so rebasing is a nightmare
+						#### Recovery: 
+
+						```shell []
+						$ git checkout branchToMove
+
+						# newParent and oldParent are not included in move
+						$ git rebase --onto newParent oldParent
+
+						# Range of commits version
+						$ git rebase --onto newParent oldParent upToAndIncludingCommit
+						```
+
+						Reference: https://stackoverflow.com/questions/29914052/i-cant-understand-the-behaviour-of-git-rebase-onto
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Stage: Merged into main branch
+						### Example mistake / problem: Mistakes have made it to the main branch
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						###  Mistakes have made it to the main branch
+						#### Recovery: 
+
+						```shell []
+						$ git checkout -b correctionBranch
+
+						$ git revert commitHash
+
+						$ git push -u origin correctionBranch
+						```
+                    </script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Help me on a Git mistakes, recovery and prevention docs project?
+						- Regular mistakes like above
+						- Things you really shouldn't do
+						- Security mistakes
+						- Recovery
+						- Prevention
+                    </script>
+				</section>
+				
 			</div>
 		</div>
 
